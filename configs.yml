@@ -1,0 +1,12 @@
+model: srgan
+epochs: 50
+dataset: cyclegan
+optimizer: Adam
+root_dir: ./data/cyclegan
+train_subset: ['']
+val_subset: ['']
+test_subset: ['']
+device: cpu
+batch_size: 8
+save_model: ''
+num_workers: 2

@@ -6,13 +6,20 @@ from torchvision import transforms as T
 from PIL import Image
 
 
+def get_image_paths_cyclegan_dataset(root_dir, subsets):
+    paths = []
+    for subset in subsets:
+        paths.extend(glob.glob(f'{root_dir}/{subset}/*/*/*.jpg'))
+    return paths
+
+
 class TrainSetCycleGan(Dataset):
     def __init__(self, root_dir:str, subsets:list, width:int, 
                     heigth:int, resized_factor:float):
         super().__init__()
         self.root_dir = root_dir
         self.subsets = subsets
-        self.image_paths = self.get_image_paths()
+        self.image_paths = get_image_paths_cyclegan_dataset(self.root_dir, self.subsets)
         self.hr_transform = T.Compose([
             T.RandomCrop((width,heigth)),
             T.ToTensor(),
@@ -22,12 +29,7 @@ class TrainSetCycleGan(Dataset):
             interpolation=T.functional.InterpolationMode.BICUBIC),  
         ])
 
-    def get_image_paths(self):
-        paths = []
-        for subset in self.subsets:
-            paths.extend(glob.glob(f'{self.root_dir}/{subset}/*/*/*.jpg'))
-        return paths
-            
+
     def __len__(self):
         return len(self.image_paths)
 
@@ -39,11 +41,16 @@ class TrainSetCycleGan(Dataset):
 
 
 class TestSetCycleGan(Dataset):
-    def __init__(self, root_dir:str, name_subset:list):
+    def __init__(self, root_dir:str, subsets:list):
         super().__init__()
+        self.root_dir = root_dir
+        self.subsets = subsets
+        self.image_paths = get_image_paths_cyclegan_dataset(self.root_dir, self.subsets)
+        self.hr_transform = T.Compose([])
+        self.lr_transform = T.Compose([])
     
     def __len__(self):
-        return
+        return len(self.image_paths)
 
     def __getitem__(self, index):
         return 
