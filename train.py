@@ -33,6 +33,7 @@ if __name__ == '__main__':
     epochs = configs['epochs']
     ith_pool = configs['ith_pool']
     jth_cnv = configs['jth_cnv']
+    adversarial_weight = configs['adversarial_weight']
 
     train_set = TrainSetCycleGan(root_dir, train_subset)
     val_set = TrainSetCycleGan(root_dir, val_subset)
@@ -49,21 +50,35 @@ if __name__ == '__main__':
     for epoch in tqdm(range(epochs)):
         gen_model.train()
         dis_model.train()
-        for hr_tensor, lr_tensor in train_loader:
-            sr_tensor = gen_model(lr_tensor)
-            # Discrim network
+        for hr_images, lr_images in train_loader:
+            ### Discriminator network
             dis_optimizer.zero_grad()
-            prob_sr = dis_model(sr_tensor)
-            prob_hr = dis_model(hr_tensor)
-            fake_labels = torch.full([batch_size, 0], 0.0, dtype=prob_sr.dtype, device=device)
-            real_labels = torch.full([batch_size, 0], 1.0, dtype=prob_hr.dtype, device=device)
-            dis_loss_sr = adver_criterion(prob_sr)
-            dis_loss_hr = adver_criterion(hr_tensor)
-            dis_loss = (dis_loss_sr + dis_loss_hr)
-            # Gen network
-            gen_optimizer.zero_grad()
-            content_loss = gen_criterion(hr_tensor, lr_tensor)
             
+            # Create lable for classification task
+            real_labels = torch.full([batch_size, 1], 1.0, dtype=prob_hr.dtype, device=device)
+            fake_labels = torch.full([batch_size, 1], 0.0, dtype=prob_sr.dtype, device=device)
+
+            # real samples
+            prob_hr = dis_model(hr_images)
+            dis_loss_real = adver_criterion(hr_images, real_labels)
+            dis_loss_real.backward()
+
+            # generate sample 
+            sr_images = gen_model(lr_images)
+            prob_sr = dis_model(sr_images)
+            dis_loss_fake = adver_criterion(prob_sr, fake_labels)
+            dis_loss_fake.backward()
+
+            dis_loss = (dis_loss_fake + dis_loss_real)
+            dis_optimizer.step()
+
+            ### Generator network
+            gen_optimizer.zero_grad()
+            content_loss = gen_criterion(hr_images, sr_images)
+            adversarial_loss = adver_criterion(prob_sr, real_labels)
+            gen_loss = content_loss + adversarial_weight*adversarial_loss
+            gen_loss.backward()
+
             
 
         

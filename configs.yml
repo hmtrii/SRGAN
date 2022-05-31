@@ -12,3 +12,4 @@ save_model: ''
 num_workers: 2
 ith_pool: 5
 jth_cnv: 4
+adversarial_weight: 1e-3
