@@ -40,6 +40,7 @@ def train(discriminator: nn.Module,
     generator.train()
 
     start = time.time()
+    batch_index = 0
     for hr_images, lr_images in dataloader:
         ### Discriminator network
         optimizerD.zero_grad()
@@ -65,7 +66,7 @@ def train(discriminator: nn.Module,
         ### Generator network
         optimizerG.zero_grad()
         content_loss = content_criterion(hr_images, sr_images)
-        adversarial_loss = adversarial_criterion(prob_sr, real_labels)
+        adversarial_loss = adversarial_criterion(discriminator(sr_images), real_labels)
         gen_loss = content_loss + adversarial_weight*adversarial_loss
         gen_loss.backward()
         optimizerG.step()
@@ -76,7 +77,9 @@ def train(discriminator: nn.Module,
         content_losses.update(content_loss, batch_size)
         adversarial_losses.update(adversarial_loss, batch_size)
         gen_losses.update(gen_loss, batch_size)
-        process.display()
+        process.display(batch_index)
+
+        batch_index += 1
     
     epoch_time.update(time.time() - start)
 

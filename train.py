@@ -43,8 +43,8 @@ if __name__ == '__main__':
     # val_set = TrainSetCycleGan(root_dir, val_subsets, 96, 96, 4)
     # test_set = TrainSetCycleGan(root_dir, test_subset)
     
-    generator = Generator()
-    discriminator = Discriminator(width_image_transform, height_image_transform)
+    generator = Generator().to(device)
+    discriminator = Discriminator(width_image_transform, height_image_transform).to(device)
     optimizerG = torch.optim.Adam(generator.parameters())
     optimizerD = torch.optim.Adam(discriminator.parameters())
     content_criterion = ContentLoss(ith_pool, jth_cnv).to(device)
