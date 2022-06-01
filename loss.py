@@ -8,22 +8,22 @@ from torchvision import transforms as T
 
 class ContentLoss(nn.Module):
     def __init__(self, ith_pool, jth_cnv) -> None:
-        super(ContentLoss).__init__()
-        self.model = vgg19(pretrained=True)
+        super(ContentLoss, self).__init__()
         self.ith_pool = ith_pool
         self.jth_conv = jth_cnv
-        self.feature_extractor = self.create_feature_extractor_()
         self.id_layer = self.create_id_layer()
+        self.feature_extractor = self.create_feature_extractor_()
 
     def create_id_layer(self):
         if self.ith_pool <= 2:
             id = 5 * self.ith_pool - self.jth_conv * 2
         else:
             id = (10 + 9 * (self.ith_pool - 2)) - self.jth_conv * 2
-        return f'feature.{id}'
+        return f'features.{id}'
     
     def create_feature_extractor_(self):
-        feature_extractor = create_feature_extractor(self.model, [self.id_layer])
+        model = vgg19(pretrained=True)
+        feature_extractor = create_feature_extractor(model, [self.id_layer])
         feature_extractor.eval()
         for params in feature_extractor.parameters():
             params.requires_grad = False
@@ -34,15 +34,6 @@ class ContentLoss(nn.Module):
         feature_lr = self.feature_extractor(lr_tensor)[self.id_layer]
         return F.mse_loss(feature_hr, feature_lr)
 
-class AversarialLoss(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.criterion = nn.BCELoss()
-
-    def forward(self, prob_sr, prob_hr, batch_size, device):
-        sr_labels = torch.full([batch_size, 0], 0.0, dtype=prob_sr.dtype, device=device)
-        hr_labels = torch.full([batch_size, 0], 1.0, dtype=prob_hr.dtype, device=device)
-        labels = torch.concat([sr_labels, hr_labels], dim=0)
-        preds = torch.concat([prob_sr, prob_hr])
-        loss = self.criterion(preds, labels)
-        return loss, sr_labels
+# if __name__ == '__main__':
+#     loss = ContentLoss(5, 4)
+#     print()

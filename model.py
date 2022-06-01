@@ -39,11 +39,11 @@ class Generator(nn.Module):
         )
         self.res_blocks = nn.Sequential(*[ResidualBlock(64, 64) for i in range(num_res)])
         self.pre_upsample_blocks = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=64, kernel_size=9, stride=1, padding='same'),
-            batch_norm_1 = nn.BatchNorm2d(64)
+            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding='same'),
+            nn.BatchNorm2d(64)
         )
         self.upsample_blocks = nn.Sequential(*[UpsampleBlock(64, 2) for i in range(2)])
-        self.last_conv = nn.Conv2d(in_channels=256, out_channels=3, kernel_size=3, stride=1, padding='same')
+        self.last_conv = nn.Conv2d(in_channels=64, out_channels=3, kernel_size=9, stride=1, padding='same')
 
     def forward(self, x):
         in_res_blocks = self.pre_res_blocks(x)
@@ -57,7 +57,7 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self, width, height) -> None:
         super(Discriminator, self).__init__()
-        self.pre_dense_layrers = nn.Sequential(
+        self.features = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(0.2),
 
@@ -99,7 +99,7 @@ class Discriminator(nn.Module):
         )
 
     def forward(self, x):
-        pre_dense = self.pre_dense_layrers(x)
-        pre_dense = torch.flatten(pre_dense, 1)
-        out = self.dense_layers(pre_dense)
+        features = self.features(x)
+        features = torch.flatten(features, 1)
+        out = self.dense_layers(features)
         return out
