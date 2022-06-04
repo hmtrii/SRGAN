@@ -1,14 +1,14 @@
 model: srgan
-epochs: 50
+num_epochs: 50
 dataset: cyclegan
 optimizer: Adam
-root_dir: ./data/cyclegan
+root_dataset: ./data/cyclegan
 train_subsets: ['apple2orange']
 val_subsets: ['']
 test_subset: ['']
 device: cpu
 batch_size: 8
-save_model: './runs'
+save_dir: 'small_data'
 num_workers: 2
 ith_pool: 5
 jth_cnv: 4
