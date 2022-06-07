@@ -1,10 +1,10 @@
 import os
-from h11 import Data
 from tensorboardX import SummaryWriter
 
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
+from torch.cuda import amp
 
 from datasets import TrainSetCycleGan
 from model import Generator, Discriminator
@@ -58,6 +58,8 @@ if __name__ == '__main__':
     psnr_metric = PSNR().to(device)
     ssim_metric = SSIM()
 
+    scaler = amp.GradScaler()
+
     for epoch in range(num_epochs):
         show_train = ('\n' + '%18s'*7) % ('Epoch', 'D_real_loss', 'D_fake_loss', 'D_loss', 'content_loss', 'adversarial_loss', 'G_loss')
         print(show_train)
@@ -70,6 +72,7 @@ if __name__ == '__main__':
               adversarial_criterion,
               content_criterion,
               adversarial_weight,
+              scaler,
               batch_size,
               device,
               num_epochs,
@@ -77,7 +80,7 @@ if __name__ == '__main__':
               LOGGER
         )
 
-        show_val = ('\n' + '%18s'*3) % ('', 'PSNR', 'SSIM')
+        show_val = ('%18s'*7) % ('', '', '', '', '', 'PSNR', 'SSIM')
         print(show_val)
         val_epoch(generator,
                   val_loader,

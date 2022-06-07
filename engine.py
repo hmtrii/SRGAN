@@ -9,6 +9,7 @@ import torch
 from torch import nn
 from torch import optim
 from torch.utils.data import DataLoader
+from torch.cuda import amp
 
 
 def train_epoch(discriminator: nn.Module,
@@ -19,6 +20,7 @@ def train_epoch(discriminator: nn.Module,
           adversarial_criterion: nn.BCELoss,
           content_criterion: nn.Module,
           adversarial_weight: float,
+          scaler: amp.GradScaler, 
           batch_size: int,
           device: torch.device,
           num_epochs: int,
@@ -36,38 +38,51 @@ def train_epoch(discriminator: nn.Module,
     pbar = tqdm(enumerate(dataloader), total=len(dataloader))
     for i, (hr_images, lr_images) in pbar:
         ### Discriminator network
+        for d_parameters in discriminator.parameters():
+            d_parameters.requires_grad = True
+
         optimizerD.zero_grad()
+        
         # Create lable for classification task
         real_labels = torch.full([batch_size, 1], 1.0, dtype=hr_images.dtype, device=device)
         fake_labels = torch.full([batch_size, 1], 0.0, dtype=lr_images.dtype, device=device)
+        
         # Real samples
-        prob_hr = discriminator(hr_images)
-        dis_real_loss = adversarial_criterion(prob_hr, real_labels)
-        dis_real_loss.backward()
-        # Generate sample 
-        sr_images = generator(lr_images)
-        prob_sr = discriminator(sr_images.detach().clone())
-        dis_fake_loss = adversarial_criterion(prob_sr, fake_labels)
-        dis_fake_loss.backward()
+        with amp.autocast():
+            prob_hr = discriminator(hr_images)
+            dis_real_loss = adversarial_criterion(prob_hr, real_labels)
+        scaler.scale(dis_real_loss).backward()
 
-        dis_loss = (dis_fake_loss + dis_real_loss)
-        optimizerD.step()
+        # Generate sample
+        with amp.autocast():
+            sr_images = generator(lr_images)
+            prob_sr = discriminator(sr_images.detach().clone())
+            dis_fake_loss = adversarial_criterion(prob_sr, fake_labels)
+            dis_loss = (dis_fake_loss + dis_real_loss)
+        scaler.scale(dis_fake_loss).backward()
+        scaler.step(optimizerD)
+        scaler.update()
 
         ### Generator network
+        for d_parameters in discriminator.parameters():
+            d_parameters.requires_grad = False
+
         optimizerG.zero_grad()
-        content_loss = content_criterion(hr_images, sr_images)
-        adversarial_loss = adversarial_criterion(discriminator(sr_images), real_labels)
-        gen_loss = content_loss + adversarial_weight*adversarial_loss
-        gen_loss.backward()
-        optimizerG.step()
+        with amp.autocast():
+            content_loss = content_criterion(hr_images, sr_images)
+            adversarial_loss = adversarial_criterion(discriminator(sr_images), real_labels)
+            gen_loss = content_loss + adversarial_weight*adversarial_loss
+        scaler.scale(gen_loss).backward()
+        scaler.step(optimizerG)
+        scaler.update()
 
         ### Track values
-        dis_fake_losses.update(dis_fake_loss, batch_size)
-        dis_real_losses.update(dis_real_loss, batch_size)
-        dis_losses.update(dis_loss, batch_size)
-        content_losses.update(content_loss, batch_size)
-        adversarial_losses.update(adversarial_loss, batch_size)
-        gen_losses.update(gen_loss, batch_size)
+        dis_fake_losses.update(dis_fake_loss.item(), batch_size)
+        dis_real_losses.update(dis_real_loss.item(), batch_size)
+        dis_losses.update(dis_loss.item(), batch_size)
+        content_losses.update(content_loss.item(), batch_size)
+        adversarial_losses.update(adversarial_loss.item(), batch_size)
+        gen_losses.update(gen_loss.item(), batch_size)
         
         ### Logging
         showed_values = ('%18s'*1 + '%18g'*6) % \
@@ -92,21 +107,25 @@ def val_epoch(generator: nn.Module,
     pbar = tqdm(enumerate(dataloader), total=len(dataloader))
     with torch.no_grad():
         for i, (hr_images, lr_images) in pbar:
-            sr_images = generator(lr_images)
+            with amp.autocast():
+                sr_images = generator(lr_images)
             psnr = psnr_metric(sr_images, hr_images)
             ssim = ssim_metric(sr_images, hr_images)
 
             ## Track values
-            psnrs.update(psnr, batch_size)
-            ssims.update(ssim, batch_size)
+            psnrs.update(psnr.item(), batch_size)
+            ssims.update(ssim.item(), batch_size)
 
             ### Logging
-            showed_values = ('%18s'*5 + '%18g'*2) % ('', psnrs.avg, ssims.avg)
+            showed_values = ('%18s'*5 + '%18g'*2) % ('', '', '', '', '', psnrs.avg, ssims.avg)
             pbar.set_description(showed_values)
             if i == len(pbar) - 1:
                 LOGGER.info(showed_values)
 
 def test():
+    return
+
+def inference():
     return
 
 class Summary(Enum):
