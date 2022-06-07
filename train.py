@@ -1,4 +1,5 @@
 import os
+from h11 import Data
 from tensorboardX import SummaryWriter
 
 import torch
@@ -7,10 +8,11 @@ from torch.utils.data import DataLoader
 
 from datasets import TrainSetCycleGan
 from model import Generator, Discriminator
-from loss import ContentLoss
+from losses import ContentLoss
 from engine import train_epoch, val_epoch, test
 
 from general import init_loger, create_train_dir, load_configs
+from metrics import PSNR, SSIM
 
 
 ROOT_OUTPUT = './runs'
@@ -39,19 +41,27 @@ if __name__ == '__main__':
     # writer = SummaryWriter()
 
     train_set = TrainSetCycleGan(root_dataset, train_subsets, width_image_transform, height_image_transform, upscaled_factor)
-    # val_set = TrainSetCycleGan(root_dataset, val_subsets, 96, 96, 4)
+    val_set = TrainSetCycleGan(root_dataset, val_subsets, width_image_transform, height_image_transform, upscaled_factor)
     # test_set = TrainSetCycleGan(root_dataset, test_subset)
+    
     generator = Generator().to(device)
     discriminator = Discriminator(width_image_transform, height_image_transform).to(device)
+    
     optimizerG = torch.optim.Adam(generator.parameters())
     optimizerD = torch.optim.Adam(discriminator.parameters())
+
     content_criterion = ContentLoss(ith_pool, jth_cnv).to(device)
     adversarial_criterion = nn.BCELoss().to(device)
+
     train_loader = DataLoader(train_set, batch_size=batch_size)
+    val_loader = DataLoader(val_set, batch_size=batch_size)
+    psnr_metric = PSNR().to(device)
+    ssim_metric = SSIM()
+
     for epoch in range(num_epochs):
-        head = ('\n' + '%18s'*7) % ('Epoch', 'D_real_loss', 'D_fake_loss', 'D_loss', 'content_loss', 'adversarial_loss', 'G_loss')
-        print(head)
-        LOGGER.info(head)
+        show_train = ('\n' + '%18s'*7) % ('Epoch', 'D_real_loss', 'D_fake_loss', 'D_loss', 'content_loss', 'adversarial_loss', 'G_loss')
+        print(show_train)
+        LOGGER.info(show_train)
         train_epoch(discriminator,
               generator,
               train_loader,
@@ -66,3 +76,12 @@ if __name__ == '__main__':
               epoch,
               LOGGER
         )
+
+        show_val = ('\n' + '%18s'*3) % ('', 'PSNR', 'SSIM')
+        print(show_val)
+        val_epoch(generator,
+                  val_loader,
+                  psnr_metric,
+                  ssim_metric,
+                  batch_size,
+                  LOGGER)

@@ -70,13 +70,41 @@ def train_epoch(discriminator: nn.Module,
         gen_losses.update(gen_loss, batch_size)
         
         ### Logging
-        track_values = ('%18s'*1 + '%18g'*6) % ('%g/%g' % (epoch, num_epochs - 1), dis_real_loss, dis_fake_loss, dis_loss, content_loss, adversarial_loss, gen_loss)
-        pbar.set_description(track_values)
+        showed_values = ('%18s'*1 + '%18g'*6) % \
+            ('%g/%g' % (epoch, num_epochs - 1), dis_fake_losses.avg, dis_fake_losses.avg, 
+            dis_losses.avg, content_losses.avg, adversarial_losses.avg, gen_losses.avg)
+        pbar.set_description(showed_values)
         if i == len(pbar) - 1:
-            LOGGER.info(track_values)
+            LOGGER.info(showed_values)
+        if i > 2:
+            break
 
-def val_epoch():
-    return
+def val_epoch(generator: nn.Module,
+              dataloader: DataLoader,
+              psnr_metric: nn.Module,
+              ssim_metric: nn.Module,
+              batch_size: int,
+              LOGGER: logging,
+              ):
+    psnrs = AverageMeter('PSNR', ':6.6f')
+    ssims = AverageMeter('SSIM', ':6.6f')
+    generator.eval()
+    pbar = tqdm(enumerate(dataloader), total=len(dataloader))
+    with torch.no_grad():
+        for i, (hr_images, lr_images) in pbar:
+            sr_images = generator(lr_images)
+            psnr = psnr_metric(sr_images, hr_images)
+            ssim = ssim_metric(sr_images, hr_images)
+
+            ## Track values
+            psnrs.update(psnr, batch_size)
+            ssims.update(ssim, batch_size)
+
+            ### Logging
+            showed_values = ('%18s'*5 + '%18g'*2) % ('', psnrs.avg, ssims.avg)
+            pbar.set_description(showed_values)
+            if i == len(pbar) - 1:
+                LOGGER.info(showed_values)
 
 def test():
     return

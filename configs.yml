@@ -4,7 +4,7 @@ dataset: cyclegan
 optimizer: Adam
 root_dataset: ./data/cyclegan
 train_subsets: ['apple2orange']
-val_subsets: ['']
+val_subsets: ['apple2orange']
 test_subset: ['']
 device: cpu
 batch_size: 8
