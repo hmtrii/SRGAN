@@ -16,3 +16,5 @@ adversarial_weight: 0.001
 width_image: 96
 height_image: 96
 upscaled_factor: 4
+lr: 0.0001
+lr_scheduler_gamma: 0.1

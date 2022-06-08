@@ -33,7 +33,3 @@ class ContentLoss(nn.Module):
         feature_hr = self.feature_extractor(hr_tensor)[self.id_layer]
         feature_lr = self.feature_extractor(lr_tensor)[self.id_layer]
         return F.mse_loss(feature_hr, feature_lr)
-
-# if __name__ == '__main__':
-#     loss = ContentLoss(5, 4)
-#     print()

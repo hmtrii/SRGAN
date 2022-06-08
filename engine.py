@@ -91,8 +91,6 @@ def train_epoch(discriminator: nn.Module,
         pbar.set_description(showed_values)
         if i == len(pbar) - 1:
             LOGGER.info(showed_values)
-        if i > 2:
-            break
 
 def val_epoch(generator: nn.Module,
               dataloader: DataLoader,
@@ -121,6 +119,7 @@ def val_epoch(generator: nn.Module,
             pbar.set_description(showed_values)
             if i == len(pbar) - 1:
                 LOGGER.info(showed_values)
+    return psnrs, ssims
 
 def test():
     return
