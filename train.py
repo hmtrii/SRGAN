@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
     output_dir = create_train_dir(ROOT_OUTPUT, save_dir)
     LOGGER = init_loger(output_dir)
-    # writer = SummaryWriter()
+    writer = SummaryWriter(os.path.join(output_dir, 'tensorboard'))
 
     train_set = TrainSetCycleGan(root_dataset, train_subsets, width_image_transform, height_image_transform, upscaled_factor)
     val_set = TrainSetCycleGan(root_dataset, val_subsets, width_image_transform, height_image_transform, upscaled_factor)
@@ -88,7 +88,8 @@ if __name__ == '__main__':
                     device,
                     num_epochs,
                     epoch,
-                    LOGGER
+                    LOGGER,
+                    writer,
         )
 
         show_val = ('%18s'*7) % ('', '', '', '', '', 'PSNR', 'SSIM')
@@ -98,7 +99,8 @@ if __name__ == '__main__':
                                psnr_metric,
                                ssim_metric,
                                batch_size,
-                               LOGGER
+                               LOGGER,
+                               writer,
         )
                         
         schedulerG.step()

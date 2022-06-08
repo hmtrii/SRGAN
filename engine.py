@@ -108,7 +108,7 @@ def val_epoch(generator: nn.Module,
               epoch:int,
               LOGGER: logging,
               writer: SummaryWriter,
-              ) -> List[float, float]:
+              ) -> List[float]:
     psnrs = AverageMeter('PSNR', ':6.6f')
     ssims = AverageMeter('SSIM', ':6.6f')
     generator.eval()
@@ -131,7 +131,6 @@ def val_epoch(generator: nn.Module,
                 LOGGER.info(showed_values)
                 writer.add_scalar('Val/psnr', psnrs.avg, epoch)
                 writer.add_scalar('Val/ssim', ssims.avg, epoch)
-
     return psnrs, ssims
 
 def test():
