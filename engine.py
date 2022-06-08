@@ -3,6 +3,7 @@ import logging
 from tqdm import tqdm
 from enum import Enum
 from typing import List
+from tensorboardX import SummaryWriter
 
 
 import torch
@@ -26,6 +27,7 @@ def train_epoch(discriminator: nn.Module,
           num_epochs: int,
           epoch: int,
           LOGGER: logging.Logger,
+          writer: SummaryWriter,
         ) -> None:
     dis_fake_losses = AverageMeter('Discriminator loss for real samples', ':6.6f')
     dis_real_losses = AverageMeter('Discriminator loss for fake samples', ':6.6f')
@@ -91,14 +93,22 @@ def train_epoch(discriminator: nn.Module,
         pbar.set_description(showed_values)
         if i == len(pbar) - 1:
             LOGGER.info(showed_values)
+            writer.add_scalar('Train/D_fake_loss', dis_fake_losses.avg, epoch)
+            writer.add_scalar('Train/D_real_loss', dis_real_losses.avg, epoch)
+            writer.add_scalar('Train/D_loss', dis_losses.avg, epoch)
+            writer.add_scalar('Train/content_loss', content_losses.avg, epoch)
+            writer.add_scalar('Train/adversarial_loss', adversarial_losses.avg, epoch)
+            writer.add_scalar('Train/G_loss', gen_losses.avg, epoch)
 
 def val_epoch(generator: nn.Module,
               dataloader: DataLoader,
               psnr_metric: nn.Module,
               ssim_metric: nn.Module,
               batch_size: int,
+              epoch:int,
               LOGGER: logging,
-              ):
+              writer: SummaryWriter,
+              ) -> List[float, float]:
     psnrs = AverageMeter('PSNR', ':6.6f')
     ssims = AverageMeter('SSIM', ':6.6f')
     generator.eval()
@@ -119,6 +129,9 @@ def val_epoch(generator: nn.Module,
             pbar.set_description(showed_values)
             if i == len(pbar) - 1:
                 LOGGER.info(showed_values)
+                writer.add_scalar('Val/psnr', psnrs.avg, epoch)
+                writer.add_scalar('Val/ssim', ssims.avg, epoch)
+
     return psnrs, ssims
 
 def test():
