@@ -1,4 +1,5 @@
 import os
+import time
 import shutil
 from tensorboardX import SummaryWriter
 
@@ -14,7 +15,7 @@ from model import Generator, Discriminator
 from losses import ContentLoss
 from engine import train_epoch, val_epoch, test
 
-from general import init_loger, create_train_dir, load_configs, random_seed
+from general import init_loger, create_train_dir, load_configs, random_seed, standard_time
 from metrics import PSNR, SSIM
 
 
@@ -78,6 +79,7 @@ if __name__ == '__main__':
 
     best_psnr = float('-inf')
     best_ssim = float('-inf')
+    start = time.time()
     for epoch in range(num_epochs):
         show_train = ('%18s'*7) % ('Epoch', 'D_real_loss', 'D_fake_loss', 'D_loss', 'content_loss', 'adversarial_loss', 'G_loss')
         print(show_train)
@@ -135,6 +137,8 @@ if __name__ == '__main__':
         print(msg)
         LOGGER.info(msg)
         if psnr > best_psnr and ssim > best_ssim:
+            best_psnr = psnr
+            best_ssim = ssim
             torch.save({'epoch': epoch,
                         'psnr': psnr,
                         'ssim': ssim,
@@ -154,4 +158,6 @@ if __name__ == '__main__':
             msg = f'SAVE BEST MODELS AT EPOCH {epoch}'
             print(msg)
             LOGGER.info(msg)
-            
+    training_time = standard_time(time.time() - start)
+    print(f'Complete training in {training_time}')
+    LOGGER.info(f'Complete training in {training_time}')

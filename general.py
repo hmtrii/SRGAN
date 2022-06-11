@@ -39,3 +39,9 @@ def random_seed(seed):
     random.seed(seed)
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
+
+def standard_time(second):
+    hour = second // 3600
+    minute = (second - hour*3600) // 60
+    second = second - (hour*3600) - (minute*60)
+    return f'{hour}h{minute}m{second}s'

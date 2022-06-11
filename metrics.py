@@ -28,7 +28,7 @@ class SSIM(nn.Module):
         gaussian_kernel_window = np.outer(gaussian_kernel, gaussian_kernel.transpose())
         return gaussian_kernel_window
 
-    def _ssim_torch(self, 
+    def ssim_torch(self, 
                     raw_tensor: torch.Tensor,
                     dst_tensor: torch.Tensor,
                    ) -> float:
@@ -50,10 +50,8 @@ class SSIM(nn.Module):
                                 groups=raw_tensor.shape[1]) - dst_mean_square
         raw_dst_covariance = F.conv2d(raw_tensor * dst_tensor, gaussian_kernel_window, stride=1, padding=(0, 0),
                                     groups=raw_tensor.shape[1]) - raw_dst_mean
-
         ssim_molecular = (2 * raw_dst_mean + c1) * (2 * raw_dst_covariance + c2)
         ssim_denominator = (raw_mean_square + dst_mean_square + c1) * (raw_variance + dst_variance + c2)
-
         ssim_metrics = ssim_molecular / ssim_denominator
         ssim_metrics = torch.mean(ssim_metrics, [1, 2, 3])
         return ssim_metrics
@@ -61,4 +59,4 @@ class SSIM(nn.Module):
     def forward(self, raw_images: torch.Tensor, dst_images: torch.Tensor):
         raw_images = raw_images.to(torch.float64)
         dst_images = dst_images.to(torch.float64)
-        return torch.mean(self._ssim_torch(raw_images, dst_images), axis=0)
+        return torch.mean(self.ssim_torch(raw_images, dst_images), axis=0)
