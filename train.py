@@ -1,4 +1,5 @@
 import os
+import shutil
 from tensorboardX import SummaryWriter
 
 import torch
@@ -45,11 +46,16 @@ if __name__ == '__main__':
     output_dir = create_train_dir(ROOT_OUTPUT, save_dir)
     LOGGER = init_loger(output_dir)
     writer = SummaryWriter(os.path.join(output_dir, 'tensorboard'))
+    shutil.copy(config_path, output_dir)
 
     train_set = TrainSetCycleGan(root_dataset, train_subsets, width_image_transform, height_image_transform, upscaled_factor)
     val_set = TrainSetCycleGan(root_dataset, val_subsets, width_image_transform, height_image_transform, upscaled_factor)
     # test_set = TrainSetCycleGan(root_dataset, test_subset)
-    
+    print('Number of train image: ', len(train_set))
+    print('Number of val image: ', len(val_set))
+    LOGGER.info(f'Number of train image: {len(train_set)}')
+    LOGGER.info(f'Number of val image: {len(val_set)}')
+
     generator = Generator().to(device)
     discriminator = Discriminator(width_image_transform, height_image_transform).to(device)
     
@@ -60,9 +66,10 @@ if __name__ == '__main__':
     schedulerD = lr_scheduler.StepLR(optimizerD, lr_scheduler_step_size, lr_scheduler_gamma)
 
     content_criterion = ContentLoss(ith_pool, jth_cnv).to(device)
-    adversarial_criterion = nn.BCELoss().to(device)
+    adversarial_criterion = nn.BCEWithLogitsLoss().to(device)
+    # adversarial_criterion = nn.BCELoss().to(device)
 
-    train_loader = DataLoader(train_set, batch_size=batch_size)
+    train_loader = DataLoader(train_set, batch_size=batch_size,)
     val_loader = DataLoader(val_set, batch_size=batch_size)
     psnr_metric = PSNR().to(device)
     ssim_metric = SSIM()
@@ -72,7 +79,7 @@ if __name__ == '__main__':
     best_psnr = float('-inf')
     best_ssim = float('-inf')
     for epoch in range(num_epochs):
-        show_train = ('\n' + '%18s'*7) % ('Epoch', 'D_real_loss', 'D_fake_loss', 'D_loss', 'content_loss', 'adversarial_loss', 'G_loss')
+        show_train = ('%18s'*7) % ('Epoch', 'D_real_loss', 'D_fake_loss', 'D_loss', 'content_loss', 'adversarial_loss', 'G_loss')
         print(show_train)
         LOGGER.info(show_train)
         train_epoch(discriminator,
@@ -94,11 +101,14 @@ if __name__ == '__main__':
 
         show_val = ('%18s'*7) % ('', '', '', '', '', 'PSNR', 'SSIM')
         print(show_val)
+        LOGGER.info(show_val)
         psnr, ssim = val_epoch(generator,
                                val_loader,
                                psnr_metric,
                                ssim_metric,
                                batch_size,
+                               device,
+                               epoch,
                                LOGGER,
                                writer,
         )
@@ -139,6 +149,8 @@ if __name__ == '__main__':
                         'scheduler': schedulerD,
                         'state_dict': discriminator},
                         os.path.join(output_dir, 'discriminator_best.pth'))
+            best_psnr = psnr
+            best_ssim = ssim
             msg = f'SAVE BEST MODELS AT EPOCH {epoch}'
             print(msg)
             LOGGER.info(msg)

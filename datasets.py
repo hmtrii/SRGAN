@@ -6,26 +6,29 @@ from torchvision import transforms as T
 from PIL import Image
 
 
-def get_image_paths_cyclegan_dataset(root_dir, subsets):
+def get_image_paths_cyclegan_dataset(root_dir, subsets, min_width, min_height):
     paths = []
     for subset in subsets:
-        paths.extend(glob.glob(f'{root_dir}/{subset}/*/*/*.jpg'))
+        for path in glob.glob(f'{root_dir}/{subset}/*/*/*.jpg'):
+            image = Image.open(path)
+            if image.size[0] > min_width and image.size[1] > min_height and image.mode != 'L':
+                paths.append(path)
     return paths
 
 
 class TrainSetCycleGan(Dataset):
     def __init__(self, root_dir:str, subsets:list, width:int, 
-                    heigth:int, upscaled_factor:float):
+                    height:int, upscaled_factor:float):
         super().__init__()
         self.root_dir = root_dir
         self.subsets = subsets
-        self.image_paths = get_image_paths_cyclegan_dataset(self.root_dir, self.subsets)
+        self.image_paths = get_image_paths_cyclegan_dataset(self.root_dir, self.subsets, width, height)
         self.hr_transform = T.Compose([
-            T.RandomCrop((width, heigth)),
+            T.RandomCrop((width, height)),
             T.ToTensor(),
         ])
         self.lr_transform = T.Compose([
-            T.Resize((width//upscaled_factor, heigth//upscaled_factor), 
+            T.Resize((width//upscaled_factor, height//upscaled_factor), 
             interpolation=T.functional.InterpolationMode.BICUBIC),  
         ])
 
@@ -46,17 +49,11 @@ class TestSetCycleGan(Dataset):
         super().__init__()
         self.root_dir = root_dir
         self.subsets = subsets
-        self.image_paths = get_image_paths_cyclegan_dataset(self.root_dir, self.subsets)
-        self.hr_transform = T.Compose([])
-        self.lr_transform = T.Compose([])
-    
+        self.image_paths = get_image_paths_cyclegan_dataset(self.root_dir, self.subsets, 0, 0)
+        
     def __len__(self):
         return len(self.image_paths)
 
     def __getitem__(self, index):
-        return 
-
-if __name__ == '__main__':
-    d = TrainSetCycleGan('data/cyclegan', ['ae_photos', 'apple2orange'], 96, 96, 4)
-    x = d.__getitem__(0)
-    print()
+        image = Image.open(self.image_paths[index])
+        return image

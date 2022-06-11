@@ -39,6 +39,8 @@ def train_epoch(discriminator: nn.Module,
     generator.train()
     pbar = tqdm(enumerate(dataloader), total=len(dataloader))
     for i, (hr_images, lr_images) in pbar:
+        hr_images = hr_images.to(device)
+        lr_images = lr_images.to(device)
         ### Discriminator network
         for d_parameters in discriminator.parameters():
             d_parameters.requires_grad = True
@@ -46,20 +48,20 @@ def train_epoch(discriminator: nn.Module,
         optimizerD.zero_grad()
         
         # Create lable for classification task
-        real_labels = torch.full([batch_size, 1], 1.0, dtype=hr_images.dtype, device=device)
-        fake_labels = torch.full([batch_size, 1], 0.0, dtype=lr_images.dtype, device=device)
+        real_labels = torch.full([hr_images.size(0), 1], 1.0, dtype=hr_images.dtype, device=device)
+        fake_labels = torch.full([hr_images.size(0), 1], 0.0, dtype=lr_images.dtype, device=device)
         
         # Real samples
         with amp.autocast():
-            prob_hr = discriminator(hr_images)
-            dis_real_loss = adversarial_criterion(prob_hr, real_labels)
+            hr_output = discriminator(hr_images)
+            dis_real_loss = adversarial_criterion(hr_output, real_labels)
         scaler.scale(dis_real_loss).backward()
 
         # Generate sample
         with amp.autocast():
             sr_images = generator(lr_images)
-            prob_sr = discriminator(sr_images.detach().clone())
-            dis_fake_loss = adversarial_criterion(prob_sr, fake_labels)
+            sr_output = discriminator(sr_images.detach().clone())
+            dis_fake_loss = adversarial_criterion(sr_output, fake_labels)
             dis_loss = (dis_fake_loss + dis_real_loss)
         scaler.scale(dis_fake_loss).backward()
         scaler.step(optimizerD)
@@ -105,6 +107,7 @@ def val_epoch(generator: nn.Module,
               psnr_metric: nn.Module,
               ssim_metric: nn.Module,
               batch_size: int,
+              device: torch.device,
               epoch:int,
               LOGGER: logging,
               writer: SummaryWriter,
@@ -115,6 +118,9 @@ def val_epoch(generator: nn.Module,
     pbar = tqdm(enumerate(dataloader), total=len(dataloader))
     with torch.no_grad():
         for i, (hr_images, lr_images) in pbar:
+            hr_images = hr_images.to(device)
+            lr_images = lr_images.to(device)
+
             with amp.autocast():
                 sr_images = generator(lr_images)
             psnr = psnr_metric(sr_images, hr_images)
@@ -131,9 +137,10 @@ def val_epoch(generator: nn.Module,
                 LOGGER.info(showed_values)
                 writer.add_scalar('Val/psnr', psnrs.avg, epoch)
                 writer.add_scalar('Val/ssim', ssims.avg, epoch)
-    return psnrs, ssims
+    return psnrs.avg, ssims.avg
 
-def test():
+def test(generator: nn.Module,
+         ):
     return
 
 def inference():

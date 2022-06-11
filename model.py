@@ -2,6 +2,7 @@ import torch
 from torch import nn
 import math
 
+
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(ResidualBlock, self).__init__()
@@ -95,7 +96,6 @@ class Discriminator(nn.Module):
             nn.Linear(in_features=(width_fm*height_fm*512), out_features=1024),
             nn.LeakyReLU(),
             nn.Linear(in_features=1024, out_features=1),
-            nn.Sigmoid()
         )
 
     def forward(self, x):

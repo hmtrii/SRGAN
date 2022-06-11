@@ -5,11 +5,13 @@ import yaml
 import torch
 import numpy as np
 import random
+import cv2
+import shutil
 
 
 def init_loger(output_dir):
     save_file = os.path.join(output_dir, 'info.log')
-    logging.basicConfig(filename=save_file)
+    logging.basicConfig(filename=save_file, format='%(message)s')
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     return logger
