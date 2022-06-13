@@ -73,7 +73,7 @@ if __name__ == '__main__':
     train_loader = DataLoader(train_set, batch_size=batch_size,)
     val_loader = DataLoader(val_set, batch_size=batch_size)
     psnr_metric = PSNR().to(device)
-    ssim_metric = SSIM()
+    ssim_metric = SSIM().to(device)
 
     scaler = amp.GradScaler()
 
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     best_ssim = float('-inf')
     start = time.time()
     for epoch in range(num_epochs):
-        show_train = ('%18s'*7) % ('Epoch', 'D_real_loss', 'D_fake_loss', 'D_loss', 'content_loss', 'adversarial_loss', 'G_loss')
+        show_train = ('%18s'*9) % ('Epoch', 'Prob(hr)', 'Prob(sr)', 'D(hr)', 'D(sr)', 'D_loss', 'content_loss', 'adversarial_loss', 'G_loss')
         print(show_train)
         LOGGER.info(show_train)
         train_epoch(discriminator,
@@ -161,3 +161,4 @@ if __name__ == '__main__':
     training_time = standard_time(time.time() - start)
     print(f'Complete training in {training_time}')
     LOGGER.info(f'Complete training in {training_time}')
+    writer.close()

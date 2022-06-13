@@ -35,6 +35,8 @@ def train_epoch(discriminator: nn.Module,
     content_losses = AverageMeter('Content loss', ':6.6f')
     adversarial_losses = AverageMeter('Adversarial loss', ':6.6f')
     gen_losses = AverageMeter('Generator loss', ':6.6f')
+    dis_hr_probs = AverageMeter('D(hr)', ':6.6f')
+    dis_sr_probs = AverageMeter('D(sr)', ':6.6f')
     discriminator.train()
     generator.train()
     pbar = tqdm(enumerate(dataloader), total=len(dataloader))
@@ -80,17 +82,22 @@ def train_epoch(discriminator: nn.Module,
         scaler.step(optimizerG)
         scaler.update()
 
+        dis_hr_prob = torch.sigmoid_(torch.mean(hr_output.detach()))
+        dis_sr_prob = torch.sigmoid_(torch.mean(sr_output.detach()))
+
         ### Track values
-        dis_fake_losses.update(dis_fake_loss.item(), batch_size)
-        dis_real_losses.update(dis_real_loss.item(), batch_size)
-        dis_losses.update(dis_loss.item(), batch_size)
-        content_losses.update(content_loss.item(), batch_size)
-        adversarial_losses.update(adversarial_loss.item(), batch_size)
-        gen_losses.update(gen_loss.item(), batch_size)
+        dis_fake_losses.update(dis_fake_loss.item(), hr_images.size(0))
+        dis_real_losses.update(dis_real_loss.item(), hr_images.size(0))
+        dis_losses.update(dis_loss.item(), hr_images.size(0))
+        content_losses.update(content_loss.item(), hr_images.size(0))
+        adversarial_losses.update(adversarial_loss.item(), hr_images.size(0))
+        gen_losses.update(gen_loss.item(), hr_images.size(0))
+        dis_hr_probs.update(dis_hr_prob.item(), hr_images.size(0))
+        dis_sr_probs.update(dis_sr_prob.item(), hr_images.size(0))
         
         ### Logging
-        showed_values = ('%18s'*1 + '%18g'*6) % \
-            ('%g/%g' % (epoch, num_epochs - 1), dis_fake_losses.avg, dis_fake_losses.avg, 
+        showed_values = ('%18s'*1 + '%18g'*8) % \
+            ('%g/%g' % (epoch, num_epochs - 1), dis_hr_probs.avg, dis_sr_probs.avg, dis_real_losses.avg, dis_fake_losses.avg, 
             dis_losses.avg, content_losses.avg, adversarial_losses.avg, gen_losses.avg)
         pbar.set_description(showed_values)
         if i == len(pbar) - 1:
@@ -127,8 +134,8 @@ def val_epoch(generator: nn.Module,
             ssim = ssim_metric(sr_images, hr_images)
 
             ## Track values
-            psnrs.update(psnr.item(), batch_size)
-            ssims.update(ssim.item(), batch_size)
+            psnrs.update(psnr.item(), hr_images.size(0))
+            ssims.update(ssim.item(), hr_images.size(0))
 
             ### Logging
             showed_values = ('%18s'*5 + '%18g'*2) % ('', '', '', '', '', psnrs.avg, ssims.avg)
