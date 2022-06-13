@@ -1,3 +1,4 @@
+from dis import dis
 import os
 import time
 import shutil
@@ -43,6 +44,8 @@ if __name__ == '__main__':
     lr = configs['lr']
     lr_scheduler_step_size = int(num_epochs / 2) # ref paper
     lr_scheduler_gamma = configs['lr_scheduler_gamma']
+    resume_discriminator = configs['resume_discriminator']
+    resume_generator = configs['resume_generator']
 
     output_dir = create_train_dir(ROOT_OUTPUT, save_dir)
     LOGGER = init_loger(output_dir)
@@ -79,8 +82,26 @@ if __name__ == '__main__':
 
     best_psnr = float('-inf')
     best_ssim = float('-inf')
+    start_epoch = 0
+    if resume_discriminator:
+        checkpoint = torch.load(resume_discriminator, map_location=device)
+        start_epoch = checkpoint['epoch']
+        discriminator.load_state_dict(checkpoint['model_state_dict'])
+        optimizerD.load_state_dict(checkpoint['optimizer'])
+        schedulerD.load_state_dict(checkpoint['scheduler'])
+        best_psnr = checkpoint['bestpsnr']
+        best_ssim = checkpoint['best_ssim']
+    if resume_generator:
+        checkpoint = torch.load(resume_generator)
+        start_epoch = checkpoint['epoch']
+        generator.load_state_dict(checkpoint['model_state_dict'])
+        optimizerG.load_state_dict(checkpoint['optimizer'])
+        schedulerG.load_state_dict(checkpoint['scheduler'])
+        best_psnr = checkpoint['best_psnr']
+        best_ssim = checkpoint['best_ssim']
+
     start = time.time()
-    for epoch in range(num_epochs):
+    for epoch in range(start_epoch, num_epochs):
         show_train = ('%18s'*9) % ('Epoch', 'Prob(hr)', 'Prob(sr)', 'D(hr)', 'D(sr)', 'D_loss', 'content_loss', 'adversarial_loss', 'G_loss')
         print(show_train)
         LOGGER.info(show_train)
@@ -120,18 +141,18 @@ if __name__ == '__main__':
 
         ### Save checkpoints
         torch.save({'epoch': epoch,
-                    'psnr': psnr,
-                    'ssim': ssim,
-                    'optimizer': optimizerG,
-                    'scheduler': schedulerG,
-                    'state_dict': generator},
+                    'best_psnr': best_psnr,
+                    'best_ssim': best_ssim,
+                    'optimizer': optimizerG.state_dict(),
+                    'scheduler': schedulerG.state_dict(),
+                    'mode_state_dict': generator.state_dict()},
                     os.path.join(output_dir, 'generator_last.pth'))
         torch.save({'epoch': epoch,
-                    'psnr': psnr,
-                    'ssim': ssim,
-                    'optimizer': optimizerD,
-                    'scheduler': schedulerD,
-                    'state_dict': discriminator},
+                    'best_psnr': best_psnr,
+                    'best_ssim': best_ssim,
+                    'optimizer': optimizerD.state_dict(),
+                    'scheduler': schedulerD.state_dict(),
+                    'mode_state_dict': discriminator.state_dict()},
                     os.path.join(output_dir, 'discriminator_last.pth'))
         msg = f'SAVE LAST MODELS AT EPOCH {epoch}'
         print(msg)
