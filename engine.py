@@ -146,12 +146,6 @@ def val_epoch(generator: nn.Module,
                 writer.add_scalar('Val/ssim', ssims.avg, epoch)
     return psnrs.avg, ssims.avg
 
-def test(generator: nn.Module,
-         ):
-    return
-
-def inference():
-    return
 
 class Summary(Enum):
     NONE = 0

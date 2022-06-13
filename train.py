@@ -163,16 +163,16 @@ if __name__ == '__main__':
             torch.save({'epoch': epoch,
                         'psnr': psnr,
                         'ssim': ssim,
-                        'optimizer': optimizerG,
-                        'scheduler': schedulerG,
-                        'state_dict': generator},
+                        'optimizer': optimizerG.state_dict(),
+                        'scheduler': schedulerG.state_dict(),
+                        'model_state_dict': generator.state_dict()},
                         os.path.join(output_dir, 'generator_best.pth'))
             torch.save({'epoch': epoch,
                         'psnr': psnr,
                         'ssim': ssim,
-                        'optimizer': optimizerD,
-                        'scheduler': schedulerD,
-                        'state_dict': discriminator},
+                        'optimizer': optimizerD.state_dict(),
+                        'scheduler': schedulerD.state_dict(),
+                        'model_state_dict': discriminator.state_dict()},
                         os.path.join(output_dir, 'discriminator_best.pth'))
             best_psnr = psnr
             best_ssim = ssim
