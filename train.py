@@ -14,7 +14,7 @@ from torch.optim import lr_scheduler
 from datasets import TrainSetCycleGan
 from model import Generator, Discriminator
 from losses import ContentLoss
-from engine import train_epoch, val_epoch, test
+from engine import train_epoch, val_epoch
 
 from general import init_loger, create_train_dir, load_configs, random_seed, standard_time
 from metrics import PSNR, SSIM
