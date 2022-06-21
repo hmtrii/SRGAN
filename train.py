@@ -1,7 +1,7 @@
-from dis import dis
 import os
 import time
 import shutil
+import argparse
 from tensorboardX import SummaryWriter
 
 import torch
@@ -12,7 +12,7 @@ from torch.optim import lr_scheduler
 
 
 from datasets import TrainSetCycleGan
-from model import Generator, Discriminator
+from models.srgan import Generator, Discriminator
 from losses import ContentLoss
 from engine import train_epoch, val_epoch
 
@@ -24,8 +24,11 @@ ROOT_OUTPUT = './runs'
 
 if __name__ == '__main__':
     random_seed(0)
-    config_path = 'configs.yml'
-    configs = load_configs(config_path)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config_file', '-c', help='Path to config file', default='./configs/srgan_cfg.yml')
+    args = parser.parse_args()
+
+    configs = load_configs(args.config_file)
     save_dir = configs['save_dir']
     root_dataset = configs['root_dataset']
     train_subsets = configs['train_subsets']
@@ -50,7 +53,7 @@ if __name__ == '__main__':
     output_dir = create_train_dir(ROOT_OUTPUT, save_dir)
     LOGGER = init_loger(output_dir)
     writer = SummaryWriter(os.path.join(output_dir, 'tensorboard'))
-    shutil.copy(config_path, output_dir)
+    shutil.copy(args.config_file, output_dir)
 
     train_set = TrainSetCycleGan(root_dataset, train_subsets, width_image_transform, height_image_transform, upscaled_factor)
     val_set = TrainSetCycleGan(root_dataset, val_subsets, width_image_transform, height_image_transform, upscaled_factor)

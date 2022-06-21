@@ -1,0 +1,22 @@
+model: srgan
+num_epochs: 50
+dataset: cyclegan
+optimizer: Adam
+root_dataset: ./data/cyclegan
+train_subsets: ['facades', 'vangogh2photo', 'ae_photos', 'apple2orange', 'horse2zebra', 'cezanne2photo', 'ukiyoe2photo']
+val_subsets: ['monet2photo', 'maps']
+test_subset: ['summer2winter_yosemite', 'iphone2dslr_flower']
+device: cuda
+batch_size: 8
+save_dir: 'test'
+num_workers: 2
+ith_pool: 5
+jth_cnv: 4
+adversarial_weight: 0.001
+width_image: 96
+height_image: 96
+upscaled_factor: 4
+lr: 0.0001
+lr_scheduler_gamma: 0.1
+resume_discriminator: ''
+resume_generator: ''

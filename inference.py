@@ -6,7 +6,8 @@ from tqdm import tqdm
 import torch
 from torchvision import transforms as T
 
-from model import Generator
+from models.srgan import Generator
+
 
 def infer_one_image(image_path, generator):
     lr_image = Image.open(image_path)
