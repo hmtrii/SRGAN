@@ -12,7 +12,7 @@ from torch.optim import lr_scheduler
 
 
 from datasets import TrainSetCycleGan
-from models.srgan import Generator, Discriminator
+from model import Generator, Discriminator
 from losses import ContentLoss
 from engine import train_epoch, val_epoch
 

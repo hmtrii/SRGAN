@@ -29,7 +29,7 @@ class ContentLoss(nn.Module):
             params.requires_grad = False
         return feature_extractor
 
-    def forward(self, hr_tensor: torch.tensor, lr_tensor: torch.tensor):
+    def forward(self, hr_tensor: torch.tensor, sr_tensor: torch.tensor):
         feature_hr = self.feature_extractor(hr_tensor)[self.id_layer]
-        feature_lr = self.feature_extractor(lr_tensor)[self.id_layer]
+        feature_lr = self.feature_extractor(sr_tensor)[self.id_layer]
         return F.mse_loss(feature_hr, feature_lr)
