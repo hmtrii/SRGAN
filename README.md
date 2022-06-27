@@ -1,4 +1,4 @@
-# image-super-resolution
+# [SRGAN](https://arxiv.org/pdf/1609.04802.pdf)
 
 ## Dataset
 ### 1. Cyclegan dataset
