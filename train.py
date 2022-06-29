@@ -141,6 +141,8 @@ if __name__ == '__main__':
                         
         schedulerG.step()
         schedulerD.step()
+        writer.add_scalar('scheduler/lr_G', schedulerG.get_lr(), epoch)
+        writer.add_scalar('scheduler/lr_D', schedulerD.get_lr(), epoch)
 
         ### Save checkpoints
         torch.save({'epoch': epoch,
