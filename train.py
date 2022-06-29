@@ -141,8 +141,8 @@ if __name__ == '__main__':
                         
         schedulerG.step()
         schedulerD.step()
-        writer.add_scalar('scheduler/lr_G', schedulerG.get_lr(), epoch)
-        writer.add_scalar('scheduler/lr_D', schedulerD.get_lr(), epoch)
+        writer.add_scalar('scheduler/lr_G', schedulerG.get_last_lr(), epoch)
+        writer.add_scalar('scheduler/lr_D', schedulerD.get_last_lr(), epoch)
 
         ### Save checkpoints
         torch.save({'epoch': epoch,
@@ -162,7 +162,7 @@ if __name__ == '__main__':
         msg = f'SAVE LAST MODELS AT EPOCH {epoch}'
         print(msg)
         LOGGER.info(msg)
-        if psnr > best_psnr and ssim > best_ssim:
+        if psnr > best_psnr or ssim > best_ssim:
             best_psnr = psnr
             best_ssim = ssim
             torch.save({'epoch': epoch,

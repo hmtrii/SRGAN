@@ -16,9 +16,9 @@ class ContentLoss(nn.Module):
 
     def create_id_layer(self):
         if self.ith_pool <= 2:
-            id = 5 * self.ith_pool - self.jth_conv * 2
+            id = 5 * (self.ith_pool - 1) + self.jth_conv * 2 - 1
         else:
-            id = (10 + 9 * (self.ith_pool - 2)) - self.jth_conv * 2
+            id = (10 + 9 * (self.ith_pool - 3)) + self.jth_conv * 2 - 1
         return f'features.{id}'
     
     def create_feature_extractor_(self):
